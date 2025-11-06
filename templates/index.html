@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Voice Interview Bot</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>🎙️ AI Voice Interview Bot</h1>
+    <p>Upload your resume and speak your answers — the bot will respond naturally.</p>
+
+    <form id="uploadForm">
+      <input type="file" id="resumeInput" name="resume" accept=".pdf" required />
+      <button type="submit">Start Interview</button>
+    </form>
+
+    <div id="interviewArea" class="hidden">
+      <h2>Interview in Progress</h2>
+      <div class="section">
+        <h3>🧩 Question</h3>
+        <p id="questionText">Waiting for question...</p>
+      </div>
+
+      <div class="controls">
+        <button id="startRec">🎤 Start Recording</button>
+        <button id="stopRec" disabled>🛑 Stop & Submit</button>
+      </div>
+
+      <div class="section">
+        <h3>🗣️ Your Answer (Transcribed)</h3>
+        <p id="userAnswer">No answer yet.</p>
+      </div>
+
+      <div class="section">
+        <h3>💬 Feedback</h3>
+        <p id="feedbackText">No feedback yet.</p>
+      </div>
+
+      <audio id="botAudio" controls autoplay></audio>
+    </div>
+  </div>
+
+  <script>
+    let mediaRecorder;
+    let audioChunks = [];
+
+    const form = document.getElementById('uploadForm');
+    const questionText = document.getElementById('questionText');
+    const botAudio = document.getElementById('botAudio');
+    const startRec = document.getElementById('startRec');
+    const stopRec = document.getElementById('stopRec');
+    const interviewArea = document.getElementById('interviewArea');
+    const userAnswer = document.getElementById('userAnswer');
+    const feedbackText = document.getElementById('feedbackText');
+
+    // Upload resume & start
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById('resumeInput');
+      const formData = new FormData();
+      formData.append('resume', fileInput.files[0]);
+
+      const res = await fetch('/upload_resume', { method: 'POST', body: formData });
+      const data = await res.json();
+
+      if (data.error) return alert(data.error);
+      interviewArea.classList.remove('hidden');
+      questionText.textContent = data.first_question;
+      botAudio.src = data.audio_path;
+      botAudio.play();
+    });
+
+    // 🎙️ Start Recording
+    startRec.addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(audioChunks, { type: 'audio/wav' });
+          const formData = new FormData();
+          formData.append('audio', blob, 'response.wav');
+
+          const res = await fetch('/process_voice', { method: 'POST', body: formData });
+          const data = await res.json();
+
+          if (data.error) return alert(data.error);
+
+          userAnswer.textContent = data.user_text || "(Couldn’t recognize speech)";
+          feedbackText.textContent = data.feedback;
+          questionText.textContent = data.question_text;
+
+          botAudio.src = data.audio_path;
+          botAudio.play();
+        };
+
+        mediaRecorder.start();
+        startRec.disabled = true;
+        stopRec.disabled = false;
+        console.log("🎙️ Recording started...");
+      } catch (err) {
+        alert("Microphone access denied or unavailable.");
+      }
+    });
+
+    // 🛑 Stop & Submit
+    stopRec.addEventListener('click', () => {
+      mediaRecorder.stop();
+      startRec.disabled = false;
+      stopRec.disabled = true;
+      console.log("🛑 Recording stopped & submitted.");
+    });
+  </script>
+</body>
+</html>

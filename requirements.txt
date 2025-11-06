@@ -1,0 +1,6 @@
+Flask
+SpeechRecognition
+gTTS
+PyPDF2
+google-generativeai
+pyaudio
