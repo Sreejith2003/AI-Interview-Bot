@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interview Result</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='result.css') }}">
+</head>
+<body>
+  <div class="result-container">
+    <h1>🏁 Interview Completed</h1>
+
+    <!-- Animated Score Circle -->
+    <div class="score-circle">
+      <svg viewBox="0 0 36 36">
+        <path class="bg"
+          d="M18 2.0845
+             a 15.9155 15.9155 0 0 1 0 31.831
+             a 15.9155 15.9155 0 0 1 0 -31.831" />
+        <path id="progressPath"
+          class="progress"
+          stroke-dasharray="0, 100"
+          d="M18 2.0845
+             a 15.9155 15.9155 0 0 1 0 31.831
+             a 15.9155 15.9155 0 0 1 0 -31.831" />
+        <text x="18" y="20.35" id="percentageText" class="percentage">0%</text>
+      </svg>
+    </div>
+
+    <div class="feedback">
+      <h2>💬 Overall Feedback</h2>
+      <p>{{ feedback }}</p>
+    </div>
+
+    <a href="/" class="btn">🔁 Start New Interview</a>
+  </div>
+
+  <script>
+    const finalScore = {{ score }};
+    const progressPath = document.getElementById("progressPath");
+    const percentageText = document.getElementById("percentageText");
+
+    let current = 0;
+    const duration = 1500; // 1.5 seconds
+    const steps = 60;
+    const increment = finalScore / steps;
+    const delay = duration / steps;
+
+    const interval = setInterval(() => {
+      current += increment;
+      if (current >= finalScore) {
+        current = finalScore;
+        clearInterval(interval);
+      }
+      const percent = Math.round(current);
+      progressPath.setAttribute("stroke-dasharray", `${percent}, 100`);
+      percentageText.textContent = percent + "%";
+    }, delay);
+  </script>
+</body>
+</html>

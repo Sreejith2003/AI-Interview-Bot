@@ -1,87 +1,72 @@
 import google.generativeai as genai
 import os
-import random
 import re
 
-# -------------------------------
-# ✅ Configure Gemini API Key
-# -------------------------------
-# Option 1: Hardcoded key (quick test)
-#genai.configure(api_key="YOUR_GEMINI_API_KEY_HERE")
-
-# Option 2: Environment variable (recommended)
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-
 # -------------------------------
-# 🧠 Generate Diverse Questions
+# 🧠 Generate Questions
 # -------------------------------
 def generate_questions(resume_text):
-    """
-    Generate natural, friendly, and varied interview questions based on the resume.
-    Avoid robotic tone — sound like a human interviewer.
-    """
+    intro_question = "Hi there! Welcome to your AI interview session. To begin, could you tell me a little about yourself?"
+
     prompt = f"""
-    You are a friendly and curious interviewer having a natural conversation with a candidate.
-    You just reviewed their resume.
+    You are a friendly interviewer. Based on this resume, generate 3 job-relevant questions.
+    Ask about technical skills, teamwork, achievements, and problem-solving.
+    Keep the tone conversational and professional.
 
     Resume:
     {resume_text}
-
-    Generate 5 conversational interview questions that:
-    - Sound human and engaging (not formal or robotic)
-    - Each question focuses on a different area of the resume:
-      technical skills, education, projects, achievements, teamwork, problem-solving, or goals
-    - Use natural phrasing like:
-      "That's interesting, could you tell me more about that?"
-      "I see you worked on this — how was that experience?"
-      "Good work! How did you handle challenges in that project?"
-
-    Avoid any asterisks, markdown formatting, or lists with bullets.
-    Write plain text only.
     """
+    outro_question = "Thank you for attending the interview i will update your mark and share the feedback."
 
     model = genai.GenerativeModel("gemini-2.5-flash")
     response = model.generate_content(prompt)
-    raw_output = response.text
 
-    # Clean formatting symbols like '*', '-', etc.
-    clean_output = re.sub(r"[*•#_`>-]+", "", raw_output)
-    questions = [q.strip() for q in clean_output.split("\n") if q.strip()]
-    random.shuffle(questions)
-    return questions[:5]
+    clean_output = re.sub(r"[*•#_`>-]+", "", response.text)
+    followup_questions = [q.strip() for q in clean_output.split("\n") if q.strip()]
+    return [intro_question] + followup_questions[:3] + [outro_question]
 
 
 # -------------------------------
-# 💬 Conversational Feedback
+# 💬 Evaluate Each Answer
 # -------------------------------
 def evaluate_answer(question, answer):
-    """
-    Respond casually to the candidate's answer.
-    Sound warm, natural, and curious — like a real human interviewer.
-    Avoid markdown, lists, or unnatural phrases.
-    """
     prompt = f"""
-    You are a friendly human interviewer responding naturally to a candidate's answer.
-    You just asked:
-    "{question}"
+    You are a calm, professional interviewer evaluating a candidate's response.
 
-    The candidate said:
-    "{answer}"
+    Question: {question}
+    Answer: {answer}
 
-    Respond like a person in a conversation:
-    - Start with a short compliment or natural acknowledgment (e.g. "Nice!", "Good one!", "That sounds great!")
-    - Add a short follow-up question or curiosity ("What made you choose that approach?", "Could you tell me more about that?", "Interesting! How did you deal with challenges?")
-    - Keep it under 1 sentences.
-    - Avoid markdown, asterisks, bullets, or formatting.
-
-    Output should be plain text only.
-    
+    Give short, constructive feedback (2 lines max).
+    Focus on clarity, confidence, and relevance.
     """
 
     model = genai.GenerativeModel("gemini-2.5-flash")
     response = model.generate_content(prompt).text.strip()
+    feedback = re.sub(r"[*•#_`>-]+", "", response)
+    return feedback
 
-    # Remove any unwanted markdown or symbols
-    clean_response = re.sub(r"[*•#_`>-]+", "", response)
-    return clean_response.strip()
+
+# -------------------------------
+# 🏁 Overall Evaluation
+# -------------------------------
+def generate_overall_feedback(responses):
+    combined = "\n".join(
+        [f"Q: {r['question']}\nA: {r['answer']}\nFeedback: {r['feedback']}" for r in responses]
+    )
+
+    prompt = f"""
+    You are an expert interviewer summarizing the candidate’s performance.
+
+    Here is the full interview:
+    {combined}
+
+    Based on clarity, depth, confidence, and technical accuracy:
+    - Write 3–4 sentences summarizing overall performance.
+    - Then assign a score between 0 and 100 as 'Score: <number>%'.
+    """
+
+    model = genai.GenerativeModel("gemini-2.5-flash")
+    response = model.generate_content(prompt).text.strip()
+    return re.sub(r"[*•#_`>-]+", "", response)
