@@ -56,13 +56,22 @@ svg {
   from { stroke-dasharray: 0 100; }
 }
 
+
+/* 🎯 Bright animated percentage text inside circle */
 .percentage {
-  fill: #ffffff;
-  font-size: 0.8em;
+  fill: #00aaff;                 /* Bright blue color for visibility */
+  font-weight: 700;
+  font-size: 0.7em;              /* Larger for emphasis */
   text-anchor: middle;
-  transform: rotate(90deg);
   dominant-baseline: middle;
+  transform: rotate(90deg);      /* Fix orientation */
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.2);    /* Soft edge for readability */
+  stroke-width: 0.5px;
+  text-shadow: 0 0 12px rgba(0, 170, 255, 0.8); /* Blue glow */
 }
+
+
 
 .feedback {
   text-align: left;

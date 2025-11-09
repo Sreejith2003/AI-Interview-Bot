@@ -11,12 +11,14 @@ def generate_questions(resume_text):
     intro_question = "Hi there! Welcome to your AI interview session. To begin, could you tell me a little about yourself?"
 
     prompt = f"""
-    You are a friendly interviewer. Based on this resume, generate 3 job-relevant questions.
+
+    You are a friendly interviewer. Based on this resume, generate 7 job-relevant questions.
     Ask about technical skills, teamwork, achievements, and problem-solving.
     Keep the tone conversational and professional.
 
     Resume:
     {resume_text}
+
     """
     outro_question = "Thank you for attending the interview i will update your mark and share the feedback."
 
@@ -25,12 +27,13 @@ def generate_questions(resume_text):
 
     clean_output = re.sub(r"[*•#_`>-]+", "", response.text)
     followup_questions = [q.strip() for q in clean_output.split("\n") if q.strip()]
-    return [intro_question] + followup_questions[:3] + [outro_question]
+    return [intro_question] + followup_questions[:7] + [outro_question]
 
 
 # -------------------------------
 # 💬 Evaluate Each Answer
 # -------------------------------
+
 def evaluate_answer(question, answer):
     prompt = f"""
     You are a calm, professional interviewer evaluating a candidate's response.

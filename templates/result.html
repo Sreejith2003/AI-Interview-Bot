@@ -13,17 +13,29 @@
     <!-- Animated Score Circle -->
     <div class="score-circle">
       <svg viewBox="0 0 36 36">
+        <!-- Background Circle -->
         <path class="bg"
           d="M18 2.0845
              a 15.9155 15.9155 0 0 1 0 31.831
              a 15.9155 15.9155 0 0 1 0 -31.831" />
+        <!-- Progress Circle -->
         <path id="progressPath"
           class="progress"
           stroke-dasharray="0, 100"
           d="M18 2.0845
              a 15.9155 15.9155 0 0 1 0 31.831
              a 15.9155 15.9155 0 0 1 0 -31.831" />
-        <text x="18" y="20.35" id="percentageText" class="percentage">0%</text>
+        <!-- Percentage Text -->
+        <text id="percentageText"
+          x="18"
+          y="-17"
+          class="percentage"
+          text-anchor="middle"
+          alignment-baseline="middle"
+          dominant-baseline="middle"
+          >
+          0%
+        </text>
       </svg>
     </div>
 
@@ -41,8 +53,8 @@
     const percentageText = document.getElementById("percentageText");
 
     let current = 0;
-    const duration = 1500; // 1.5 seconds
-    const steps = 60;
+    const duration = 2000; // 2 seconds
+    const steps = 80;
     const increment = finalScore / steps;
     const delay = duration / steps;
 
