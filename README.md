@@ -83,19 +83,21 @@ export GOOGLE_API_KEY="your_gemini_api_key_here"
 python app.py
 ```
 
-Then open your browser and visit:
-👉 http://127.0.0.1:5000/
-
 🧠 How It Works
 
 1️⃣ Upload your resume (PDF).
+
 2️⃣ The Gemini model analyzes your resume and generates personalized interview questions.
+
 3️⃣ The bot speaks the first question aloud using gTTS.
+
 4️⃣ You answer verbally — your voice is recorded and transcribed via SpeechRecognition.
+
 5️⃣ Gemini evaluates your answer and gives immediate feedback.
+
 6️⃣ Once all questions are completed, the bot provides a final performance score and summary.
 
-🏁 Result Page
+# 🏁 Result Page
 
 At the end of your interview:
 
@@ -105,16 +107,16 @@ A summary paragraph analyzing your overall performance
 
 A “Start New Interview” button to retry anytime
 
-📦 Dependencies
-Flask
-google-generativeai
-SpeechRecognition
-gTTS
-PyDub
-PyPDF2
-ffmpeg
+# 📦 Dependencies
+- Flask
+- google-generativeai
+- SpeechRecognition
+- gTTS
+- PyDub
+- PyPDF2
+- ffmpeg
 
-🌱 Future Enhancements
+# 🌱 Future Enhancements
 
 🧍‍♂️ Personalized interviewer voices (custom TTS voices)
 
