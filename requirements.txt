@@ -3,6 +3,5 @@ SpeechRecognition
 gTTS
 PyPDF2
 google-generativeai
-pyaudio
 gunicorn
 python-dotenv
