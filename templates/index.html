@@ -3,107 +3,164 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🎙️ AI Live Audio Assistant</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7f8fc;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-    button {
-      margin: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      background: #0066ff;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0050d0;
-    }
-    .output {
-      margin-top: 20px;
-      width: 80%;
-      max-width: 600px;
-      background: white;
-      border-radius: 10px;
-      padding: 15px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    audio {
-      margin-top: 15px;
-      width: 100%;
-    }
-  </style>
+  <title>AI Voice Interview Bot</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <h2>🎙️ Talk to Your AI Assistant</h2>
-  <div>
-    <button id="startBtn">Start Recording</button>
-    <button id="stopBtn" disabled>Stop</button>
-  </div>
+  <div class="container">
+    <h1>🎙️ AI Voice Interview Bot</h1>
+    <p>Upload your resume to start a realistic voice-based interview. Speak naturally — the bot will guide you.</p>
 
-  <div class="output">
-    <p><strong>You said:</strong> <span id="userText">...</span></p>
-    <p><strong>AI replied:</strong> <span id="aiText">...</span></p>
-    <audio id="replyAudio" controls></audio>
+    <!-- Resume Upload Form -->
+    <form id="uploadForm">
+      <input type="file" id="resumeInput" name="resume" accept=".pdf" required />
+      <button type="submit" id="startInterviewBtn">Start Interview</button>
+      <div id="loadingIndicator" class="spinner hidden"></div>
+    </form>
+
+    <!-- Interview Area -->
+    <div id="interviewArea" class="hidden">
+      <div class="section">
+        <h3>🧩 Question</h3>
+        <p id="questionText">Waiting for question...</p>
+      </div>
+
+      <div class="controls">
+        <button id="startRec">🎤 Start Recording</button>
+        <div id="recordIndicator" class="hidden mic-pulse"></div>
+        <button id="stopRec" disabled>🛑 Stop & Submit</button>
+        <button id="finishInterviewBtn" class="finish-btn">🏁 Finish Interview</button>
+        <div id="processIndicator" class="spinner hidden"></div>
+      </div>
+
+      <div class="section">
+        <h3>🗣️ Your Answer (Transcribed)</h3>
+        <p id="userAnswer">No answer yet.</p>
+      </div>
+
+      <div class="section">
+        <h3>💬 Feedback</h3>
+        <p id="feedbackText">No feedback yet.</p>
+      </div>
+
+      <audio id="botAudio" controls autoplay></audio>
+    </div>
   </div>
 
   <script>
     let mediaRecorder;
     let audioChunks = [];
 
-    const startBtn = document.getElementById("startBtn");
-    const stopBtn = document.getElementById("stopBtn");
+    const form = document.getElementById('uploadForm');
+    const questionText = document.getElementById('questionText');
+    const botAudio = document.getElementById('botAudio');
+    const startRec = document.getElementById('startRec');
+    const stopRec = document.getElementById('stopRec');
+    const interviewArea = document.getElementById('interviewArea');
+    const userAnswer = document.getElementById('userAnswer');
+    const feedbackText = document.getElementById('feedbackText');
+    const recordIndicator = document.getElementById('recordIndicator');
+    const processIndicator = document.getElementById('processIndicator');
+    const startInterviewBtn = document.getElementById('startInterviewBtn');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const finishInterviewBtn = document.getElementById('finishInterviewBtn');
 
-    startBtn.onclick = async () => {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder = new MediaRecorder(stream);
-      mediaRecorder.start();
-      audioChunks = [];
-
-      mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
-      startBtn.disabled = true;
-      stopBtn.disabled = false;
-    };
-
-    stopBtn.onclick = async () => {
-      mediaRecorder.stop();
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
-        const formData = new FormData();
-        formData.append("audio", audioBlob, "user_audio.wav");
-
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-
-        // Send to Flask backend
-        const res = await fetch("/process_audio", {
-          method: "POST",
-          body: formData
-        });
-
-        const data = await res.json();
-
-        if (data.error) {
-          alert(data.error);
-          return;
+    // Typing effect for feedback
+    function typeText(element, text, speed = 25) {
+      element.textContent = "";
+      let i = 0;
+      const typing = setInterval(() => {
+        if (i < text.length) {
+          element.textContent += text.charAt(i);
+          i++;
+        } else {
+          clearInterval(typing);
         }
+      }, speed);
+    }
 
-        document.getElementById("userText").textContent = data.recognized_text;
-        document.getElementById("aiText").textContent = data.ai_reply;
+    // Upload Resume and start interview
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      loadingIndicator.classList.remove("hidden");
+      startInterviewBtn.disabled = true;
 
-        const audioPlayer = document.getElementById("replyAudio");
-        audioPlayer.src = data.audio_url;
-        audioPlayer.play();
-      };
-    };
+      const formData = new FormData();
+      formData.append("resume", document.getElementById("resumeInput").files[0]);
+
+      const res = await fetch("/upload_resume", { method: "POST", body: formData });
+      const data = await res.json();
+
+      loadingIndicator.classList.add("hidden");
+      startInterviewBtn.disabled = false;
+
+      if (data.error) return alert(data.error);
+
+      interviewArea.classList.remove("hidden");
+      questionText.textContent = data.first_question;
+      botAudio.src = data.audio_path;
+      botAudio.play();
+    });
+
+    // Start Recording
+    startRec.addEventListener("click", async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+
+        mediaRecorder.onstop = async () => {
+          processIndicator.classList.remove("hidden");
+
+          const blob = new Blob(audioChunks, { type: "audio/webm" });
+          const formData = new FormData();
+          formData.append("audio", blob, "response.webm");
+
+          const res = await fetch("/process_voice", { method: "POST", body: formData });
+          if (res.redirected) {
+            // Redirect to result page when interview ends
+            window.location.href = res.url;
+            return;
+          }
+
+          const data = await res.json();
+          processIndicator.classList.add("hidden");
+
+          if (data.error) return alert(data.error);
+
+          userAnswer.textContent = data.user_text || "(Couldn’t recognize speech)";
+          typeText(feedbackText, data.feedback);
+          questionText.textContent = data.question_text;
+          botAudio.src = data.audio_path;
+          botAudio.play();
+        };
+
+        mediaRecorder.start();
+        startRec.disabled = true;
+        stopRec.disabled = false;
+        recordIndicator.classList.remove("hidden");
+      } catch (err) {
+        alert("🎤 Microphone access denied or unavailable.");
+      }
+    });
+
+    // Stop Recording
+    stopRec.addEventListener("click", () => {
+      mediaRecorder.stop();
+      recordIndicator.classList.add("hidden");
+      startRec.disabled = false;
+      stopRec.disabled = true;
+    });
+
+    // Finish Interview
+    finishInterviewBtn.addEventListener("click", () => {
+      if (confirm("Are you sure you want to finish the interview now?")) {
+        window.location.href = "/finish_interview";
+      }
+    });
+    
   </script>
 </body>
 </html>
